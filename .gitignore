@@ -1,0 +1,14 @@
+# Node / frontend
+node_modules/
+dist/
+build/
+.env
+.env.local
+
+# Editores / SO
+.DS_Store
+.vscode/
+*.swp
+
+# Postgres
+*.sql.bak
