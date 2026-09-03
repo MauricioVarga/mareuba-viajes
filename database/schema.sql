@@ -128,16 +128,45 @@ INSERT INTO tipos_lugar VALUES
 -- =====================================================================
 
 CREATE TABLE usuarios (
-    id_usuario      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- En Supabase, id_usuario = auth.users.id: el login lo maneja Supabase Auth,
+    -- esta tabla solo guarda los datos de negocio (rol, nombre) de cada cuenta.
+    -- En Postgres genérico (sin Supabase), quitar la referencia a auth.users
+    -- y volver a DEFAULT gen_random_uuid().
+    id_usuario      UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email           CITEXT NOT NULL UNIQUE,      -- requiere extensión citext (ver abajo)
     nombre          TEXT NOT NULL,
     apellido        TEXT NOT NULL,
-    id_rol          TEXT NOT NULL REFERENCES roles(id_rol),
+    id_rol          TEXT NOT NULL REFERENCES roles(id_rol) DEFAULT 'ROL_OP',
     activo          BOOLEAN NOT NULL DEFAULT TRUE,
     creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
     actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE usuarios IS 'El chofer se identifica automáticamente por el usuario logueado (requisito del Word)';
+
+-- Al crear una cuenta en Supabase Auth (signup o invitación por email),
+-- este trigger crea automáticamente la fila correspondiente en usuarios,
+-- con rol Operativo (chofer) por defecto. Un administrador cambia el rol
+-- después si corresponde (ver mareuba_supabase_rls.sql).
+CREATE OR REPLACE FUNCTION mareuba.fn_provisionar_usuario()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO mareuba.usuarios (id_usuario, email, nombre, apellido, id_rol)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'nombre', split_part(NEW.email, '@', 1)),
+        COALESCE(NEW.raw_user_meta_data->>'apellido', ''),
+        COALESCE(NEW.raw_user_meta_data->>'id_rol', 'ROL_OP')
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = mareuba, public;
+
+CREATE TRIGGER trg_provisionar_usuario
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION mareuba.fn_provisionar_usuario();
 
 -- =====================================================================
 -- 3. VEHÍCULOS
