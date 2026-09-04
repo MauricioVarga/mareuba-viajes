@@ -1,12 +1,28 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import Login from "./Login";
+import ResetPassword from "./ResetPassword";
 import ChoferView from "./ChoferView";
 import AdminView from "./AdminView";
 import GerenteView from "./GerenteView";
 import { getUsuarioActual, getCatalogos, getViajes, getCargamentos, getUsuarios, getKpiChoferMensual, sincronizarCola, cantidadPendienteDeSync } from "./data";
 import { estaOnline } from "./offline";
 import { btnGhost, Spinner, ROLES } from "./ui";
+
+// Esto se evalúa apenas se carga el archivo, ANTES de que React pinte
+// nada — a propósito. Supabase empieza a procesar el enlace de
+// recuperación (que viene en el hash de la URL, ej: #access_token=...&type=recovery)
+// en el mismo instante en que se crea el cliente, sin esperar a que
+// nadie esté escuchando. Si dependiéramos únicamente del evento
+// PASSWORD_RECOVERY dentro de un useEffect, existe una ventana real
+// donde el aviso se dispara y se pierde antes de que React llegue a
+// suscribirse. Revisando la URL acá, de forma síncrona, no dependemos
+// de llegar a tiempo.
+function esEnlaceDeRecuperacion() {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  return hash.get("type") === "recovery" || query.get("type") === "recovery";
+}
 
 function EstadoConexion({ online, pendientes, sincronizando }) {
   if (online && pendientes === 0 && !sincronizando) return null; // todo normal, no mostramos nada
@@ -32,10 +48,16 @@ export default function App() {
   const [pendientes, setPendientes] = useState(0);
   const [sincronizando, setSincronizando] = useState(false);
   const sincronizandoRef = useRef(false);
+  const [recuperandoPassword, setRecuperandoPassword] = useState(esEnlaceDeRecuperacion);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data: listener } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      // Supabase dispara este evento específico cuando alguien llega desde
+      // el enlace de recuperación de contraseña del email.
+      if (event === "PASSWORD_RECOVERY") setRecuperandoPassword(true);
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -98,6 +120,7 @@ export default function App() {
   }, [session]);
 
   if (session === undefined) return <Spinner label="Verificando sesión…" />;
+  if (recuperandoPassword) return <ResetPassword onListo={() => setRecuperandoPassword(false)} />;
   if (!session) return <Login />;
   if (!usuario) {
     if (error) {

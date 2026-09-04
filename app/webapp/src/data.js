@@ -186,10 +186,10 @@ async function aplicarLugarEnCache(payload) {
 
 // --- iniciar viaje ---------------------------------------------------------
 
-async function ejecutarIniciarViaje({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida, cargas }) {
+async function ejecutarIniciarViaje({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida, cargas, observaciones }) {
   const { error: errViaje } = await supabase
     .from("viajes")
-    .insert({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida });
+    .insert({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida, observaciones });
   if (errViaje) throw errViaje;
 
   const filas = cargas.map((c) => ({ id_cargamento: c.id_cargamento, id_viaje, id_carga: c.id_carga, cantidad_inicial: c.cantidad_inicial }));
@@ -197,7 +197,7 @@ async function ejecutarIniciarViaje({ id_viaje, id_chofer, id_vehiculo, id_orige
   if (errCargas) throw errCargas;
 }
 
-export async function iniciarViaje({ id_vehiculo, id_origen, id_destino, odometro_inicial, cargas }) {
+export async function iniciarViaje({ id_vehiculo, id_origen, id_destino, odometro_inicial, cargas, observaciones = "" }) {
   const id_chofer = await usuarioIdActual();
   const payload = {
     id_viaje: uid(),
@@ -207,6 +207,7 @@ export async function iniciarViaje({ id_vehiculo, id_origen, id_destino, odometr
     id_destino,
     odometro_inicial,
     fecha_hora_salida: new Date().toISOString(),
+    observaciones,
     cargas: cargas.map((c) => ({ id_cargamento: uid(), id_carga: c.id_carga, cantidad_inicial: c.cantidad_inicial })),
   };
 
@@ -223,12 +224,12 @@ export async function iniciarViaje({ id_vehiculo, id_origen, id_destino, odometr
   return { id_viaje: payload.id_viaje, pendienteDeSync: true };
 }
 
-async function aplicarViajeEnCache({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida, cargas }) {
+async function aplicarViajeEnCache({ id_viaje, id_chofer, id_vehiculo, id_origen, id_destino, odometro_inicial, fecha_hora_salida, cargas, observaciones }) {
   const viajes = (await leerCache("viajes")) || [];
   const nuevoViaje = {
     id_viaje, numero_viaje: null, id_chofer, id_vehiculo, id_origen, id_destino,
     fecha_hora_salida, fecha_hora_llegada: null, odometro_inicial, odometro_final: null,
-    id_estado: "EST_CURSO",
+    id_estado: "EST_CURSO", observaciones,
   };
   await guardarCache("viajes", [nuevoViaje, ...viajes]);
 
@@ -241,7 +242,7 @@ async function aplicarViajeEnCache({ id_viaje, id_chofer, id_vehiculo, id_origen
 
 // --- finalizar viaje ---------------------------------------------------------
 
-async function ejecutarFinalizarViaje({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo, usuario_cierre_id, id_combustible, id_peaje }) {
+async function ejecutarFinalizarViaje({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo, usuario_cierre_id, id_combustible, id_peaje, observaciones }) {
   for (const [id_cargamento, cantidad_destino] of Object.entries(cantidadesPorCargamento)) {
     const { error } = await supabase.from("cargamento_viaje").update({ cantidad_destino: Number(cantidad_destino) }).eq("id_cargamento", id_cargamento);
     if (error) throw error;
@@ -255,6 +256,7 @@ async function ejecutarFinalizarViaje({ id_viaje, id_destino, odometro_final, ca
       fecha_hora_llegada: new Date().toISOString(),
       id_estado: "EST_FIN",
       usuario_cierre_id,
+      observaciones,
     })
     .eq("id_viaje", id_viaje);
   if (errViaje) throw errViaje;
@@ -271,10 +273,10 @@ async function ejecutarFinalizarViaje({ id_viaje, id_destino, odometro_final, ca
   }
 }
 
-export async function finalizarViaje({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo }) {
+export async function finalizarViaje({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo, observaciones = "" }) {
   const usuario_cierre_id = await usuarioIdActual();
   const payload = {
-    id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo,
+    id_viaje, id_destino, odometro_final, cantidadesPorCargamento, litrosCombustible, montoPeaje, id_vehiculo, observaciones,
     usuario_cierre_id, id_combustible: uid(), id_peaje: uid(),
   };
 
@@ -290,11 +292,11 @@ export async function finalizarViaje({ id_viaje, id_destino, odometro_final, can
   await aplicarFinalizacionEnCache(payload);
 }
 
-async function aplicarFinalizacionEnCache({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, usuario_cierre_id }) {
+async function aplicarFinalizacionEnCache({ id_viaje, id_destino, odometro_final, cantidadesPorCargamento, usuario_cierre_id, observaciones }) {
   const viajes = (await leerCache("viajes")) || [];
   const nuevos = viajes.map((v) =>
     v.id_viaje === id_viaje
-      ? { ...v, id_destino, odometro_final: Number(odometro_final), fecha_hora_llegada: new Date().toISOString(), id_estado: "EST_FIN", usuario_cierre_id }
+      ? { ...v, id_destino, odometro_final: Number(odometro_final), fecha_hora_llegada: new Date().toISOString(), id_estado: "EST_FIN", usuario_cierre_id, observaciones }
       : v
   );
   await guardarCache("viajes", nuevos);
@@ -315,11 +317,11 @@ async function aplicarFinalizacionEnCache({ id_viaje, id_destino, odometro_final
    seguido.
 --------------------------------------------------------------------------- */
 
-export async function corregirViaje({ id_viaje, id_destino, odometro_final }) {
+export async function corregirViaje({ id_viaje, id_destino, odometro_final, observaciones }) {
   const userId = await usuarioIdActual();
   const { error } = await supabase
     .from("viajes")
-    .update({ id_destino, odometro_final: Number(odometro_final), actualizado_por: userId })
+    .update({ id_destino, odometro_final: Number(odometro_final), actualizado_por: userId, observaciones })
     .eq("id_viaje", id_viaje);
   if (error) throw error;
 }

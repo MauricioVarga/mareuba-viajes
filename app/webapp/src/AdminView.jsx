@@ -106,6 +106,7 @@ function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
 function EditarViajeAdmin({ catalogos, viaje, onDone, onCancel }) {
   const [idDestino, setIdDestino] = useState(viaje.id_destino);
   const [odometroFinal, setOdometroFinal] = useState(viaje.odometro_final);
+  const [observaciones, setObservaciones] = useState(viaje.observaciones || "");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -114,7 +115,7 @@ function EditarViajeAdmin({ catalogos, viaje, onDone, onCancel }) {
     if (Number(odometroFinal) < viaje.odometro_inicial) return setError(`Debe ser mayor o igual a ${viaje.odometro_inicial}.`);
     setEnviando(true);
     try {
-      await corregirViaje({ id_viaje: viaje.id_viaje, id_destino: idDestino, odometro_final: odometroFinal });
+      await corregirViaje({ id_viaje: viaje.id_viaje, id_destino: idDestino, odometro_final: odometroFinal, observaciones: observaciones.trim() });
       onDone();
     } catch (e) {
       setError(e.message);
@@ -133,6 +134,9 @@ function EditarViajeAdmin({ catalogos, viaje, onDone, onCancel }) {
       </Field>
       <Field label="Odómetro final">
         <input type="number" className={inputCls} value={odometroFinal} onChange={(e) => setOdometroFinal(e.target.value)} />
+      </Field>
+      <Field label="Observaciones">
+        <textarea className={inputCls} rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
       </Field>
       <ErrorBanner message={error} />
       <div className="flex gap-2">

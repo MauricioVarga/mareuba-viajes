@@ -22,6 +22,7 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
         <div className="text-xs text-slate-500">
           {misCargamentos.map((c) => catalogos.cargas.find((x) => x.id_carga === c.id_carga)?.nombre_carga).join(", ")}
         </div>
+        {v.observaciones && <div className="text-xs text-slate-500 italic mt-0.5">"{v.observaciones}"</div>}
       </div>
       <div className="text-right">
         <div className="font-mono text-sm text-slate-800">
@@ -95,6 +96,7 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
   const [nuevoDestino, setNuevoDestino] = useState("");
   const [odometroInicial, setOdometroInicial] = useState("");
   const [cargasSel, setCargasSel] = useState([{ id_carga: "", cantidad_inicial: "" }]);
+  const [observaciones, setObservaciones] = useState("");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -124,6 +126,7 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
         id_destino: destinoId,
         odometro_inicial: Number(odometroInicial),
         cargas: cargasValidas.map((c) => ({ id_carga: c.id_carga, cantidad_inicial: Number(c.cantidad_inicial) })),
+        observaciones: observaciones.trim(),
       });
       onDone();
     } catch (e) {
@@ -186,6 +189,11 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
       ))}
       <button className="text-amber-600 text-sm font-medium mb-4" onClick={addCarga}>+ Agregar otra carga</button>
 
+      <Field label="Observaciones (opcional)">
+        <textarea className={inputCls} rows={3} placeholder="Cualquier detalle que no esté en los campos de arriba…"
+          value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+      </Field>
+
       <ErrorBanner message={error} />
 
       <div className="flex gap-2 mt-2">
@@ -203,6 +211,7 @@ function FinalizarViaje({ catalogos, cargamentos, viaje, onDone, onCancel }) {
   const [cantidades, setCantidades] = useState(Object.fromEntries(misCargamentos.map((c) => [c.id_cargamento, ""])));
   const [litrosCombustible, setLitrosCombustible] = useState("");
   const [montoPeaje, setMontoPeaje] = useState("");
+  const [observaciones, setObservaciones] = useState(viaje.observaciones || "");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -224,6 +233,7 @@ function FinalizarViaje({ catalogos, cargamentos, viaje, onDone, onCancel }) {
         cantidadesPorCargamento: cantidades,
         litrosCombustible,
         montoPeaje,
+        observaciones: observaciones.trim(),
       });
       onDone();
     } catch (e) {
@@ -276,6 +286,11 @@ function FinalizarViaje({ catalogos, cargamentos, viaje, onDone, onCancel }) {
           <input type="number" className={inputCls} value={montoPeaje} onChange={(e) => setMontoPeaje(e.target.value)} />
         </Field>
       </div>
+
+      <Field label="Observaciones (opcional)">
+        <textarea className={inputCls} rows={3} placeholder="Cualquier detalle que no esté en los campos de arriba…"
+          value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+      </Field>
 
       <ErrorBanner message={error} />
 
