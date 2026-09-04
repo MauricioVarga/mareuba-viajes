@@ -1,8 +1,7 @@
 import React, { useState } from "react";
+import { Lock } from "lucide-react";
 import { supabase } from "./supabaseClient";
-import { inputCls, btnPrimary, ErrorBanner } from "./ui";
-
-const inputOscuro = "w-full rounded-md bg-slate-700 border border-slate-600 text-white px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
+import { btnPrimary, ErrorBanner, CampoPassword } from "./ui";
 
 export default function ResetPassword({ onListo }) {
   const [password, setPassword] = useState("");
@@ -23,21 +22,31 @@ export default function ResetPassword({ onListo }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-8">
-      <form onSubmit={submit} className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="text-amber-500 text-2xl font-semibold tracking-tight">Mareuba</div>
-          <div className="text-slate-400 text-sm mt-1">Elegí tu nueva contraseña</div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8F9FA] px-4 py-8">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-[#CCCCCC]/40 overflow-hidden">
+        <div className="bg-[#2E7D32] px-6 py-8 text-center text-white">
+          <div className="mx-auto mb-3 w-16 h-16 bg-white rounded-full shadow-md overflow-hidden">
+            <img src="/icon-192.png" alt="Mareuba" className="w-full h-full object-cover" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">MAREUBA</h1>
+          <p className="text-xs text-white/80 font-medium tracking-wide mt-1 uppercase">Elegí tu nueva contraseña</p>
         </div>
-        <div className="bg-slate-800 rounded-lg p-5 space-y-3">
-          <input type="password" required placeholder="Contraseña nueva" value={password} onChange={(e) => setPassword(e.target.value)} className={inputOscuro} />
-          <input type="password" required placeholder="Repetir contraseña nueva" value={password2} onChange={(e) => setPassword2(e.target.value)} className={inputOscuro} />
+
+        <form onSubmit={submit} className="p-6 md:p-8 space-y-5">
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">Contraseña nueva</label>
+            <CampoPassword icono={Lock} required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">Repetir contraseña</label>
+            <CampoPassword icono={Lock} required placeholder="••••••••" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+          </div>
           <ErrorBanner message={error} />
           <button type="submit" disabled={loading} className={btnPrimary + " w-full"}>
-            {loading ? "Guardando…" : "Guardar contraseña"}
+            {loading ? "Guardando…" : "GUARDAR CONTRASEÑA"}
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

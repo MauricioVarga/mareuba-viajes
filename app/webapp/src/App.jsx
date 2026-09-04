@@ -26,11 +26,20 @@ function esEnlaceDeRecuperacion() {
 
 function EstadoConexion({ online, pendientes, sincronizando }) {
   if (online && pendientes === 0 && !sincronizando) return null; // todo normal, no mostramos nada
+  // Colores exactos de la guía de estilo para el aviso de "sin señal":
+  // fondo #FFF3CD / texto #856404. Los otros dos estados (sincronizando,
+  // pendientes con conexión) usan la paleta general, no están definidos
+  // en la guía porque son casos que agregamos nosotros.
+  if (!online) {
+    return (
+      <div className="text-sm px-4 py-2.5 rounded-lg mb-4 font-medium" style={{ backgroundColor: "#FFF3CD", color: "#856404" }}>
+        Modo Sin Señal — Los datos se guardarán localmente y se subirán solos cuando vuelva la conexión.
+      </div>
+    );
+  }
   return (
-    <div className={`text-sm px-4 py-2 rounded-md mb-4 ${online ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-slate-800 text-white"}`}>
-      {!online && "Sin conexión — lo que registres se guarda en el celular y se sube solo cuando vuelva la señal."}
-      {online && sincronizando && "Sincronizando cambios guardados…"}
-      {online && !sincronizando && pendientes > 0 && `Hay ${pendientes} cambio(s) esperando conexión.`}
+    <div className="text-sm px-4 py-2.5 rounded-lg mb-4 bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
+      {sincronizando ? "Sincronizando cambios guardados…" : `Hay ${pendientes} cambio(s) esperando conexión.`}
     </div>
   );
 }
@@ -137,12 +146,12 @@ export default function App() {
   if (!catalogos) return <Spinner label="Cargando datos…" />;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
       <div className="max-w-3xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#CCCCCC]/50">
           <div>
-            <div className="text-slate-800 font-medium">{usuario.nombre} {usuario.apellido}</div>
-            <div className="text-xs text-slate-500">{ROLES[usuario.id_rol]}</div>
+            <div className="text-[#1A1A1A] font-medium">{usuario.nombre} {usuario.apellido}</div>
+            <div className="text-xs text-[#555555]">{ROLES[usuario.id_rol]}</div>
           </div>
           <button className={btnGhost} onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
         </div>

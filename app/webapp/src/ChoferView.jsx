@@ -10,22 +10,22 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
   const chofer = mostrarChofer && usuarios ? usuarios.find((u) => u.id_usuario === v.id_chofer) : null;
   const pendienteDeSync = v.numero_viaje == null;
   return (
-    <div className={card + " flex items-center justify-between " + (onClick ? "cursor-pointer hover:border-amber-300" : "")} onClick={onClick}>
+    <div className={card + " flex items-center justify-between " + (onClick ? "cursor-pointer hover:border-[#2E7D32]/50" : "")} onClick={onClick}>
       <div>
-        <div className="text-sm font-medium text-slate-800">
+        <div className="text-sm font-medium text-[#1A1A1A]">
           {pendienteDeSync ? "Viaje nuevo" : `#${v.numero_viaje}`} · {lugarNombre(catalogos, v.id_origen)} → {lugarNombre(catalogos, v.id_destino)}
         </div>
-        <div className="text-xs text-slate-500 mt-0.5">
-          {chofer && <span className="font-medium text-slate-600">{chofer.nombre} {chofer.apellido} · </span>}
+        <div className="text-xs text-[#555555] mt-0.5">
+          {chofer && <span className="font-medium text-[#555555]">{chofer.nombre} {chofer.apellido} · </span>}
           {vehiculoNombre(catalogos, v.id_vehiculo)} · {fmtFecha(v.fecha_hora_salida)}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-[#555555]">
           {misCargamentos.map((c) => catalogos.cargas.find((x) => x.id_carga === c.id_carga)?.nombre_carga).join(", ")}
         </div>
-        {v.observaciones && <div className="text-xs text-slate-500 italic mt-0.5">"{v.observaciones}"</div>}
+        {v.observaciones && <div className="text-xs text-[#555555] italic mt-0.5">"{v.observaciones}"</div>}
       </div>
       <div className="text-right">
-        <div className="font-mono text-sm text-slate-800">
+        <div className="font-mono text-sm text-[#1A1A1A]">
           {v.odometro_final != null ? v.odometro_final - v.odometro_inicial : "—"} km
         </div>
         {pendienteDeSync ? (
@@ -58,28 +58,28 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
           <div className="flex items-center justify-between">
             <div>
               <Badge tone="amber">Viaje en curso</Badge>
-              <div className="text-lg font-medium text-slate-800 mt-2">
+              <div className="text-lg font-medium text-[#1A1A1A] mt-2">
                 {lugarNombre(catalogos, viajeEnCurso.id_origen)} → {lugarNombre(catalogos, viajeEnCurso.id_destino)}
               </div>
-              <div className="text-sm text-slate-500 mt-1">
+              <div className="text-sm text-[#555555] mt-1">
                 {vehiculoNombre(catalogos, viajeEnCurso.id_vehiculo)} · odómetro inicial {viajeEnCurso.odometro_inicial.toLocaleString()} km
               </div>
-              <div className="text-sm text-slate-500">Salida: {fmtFecha(viajeEnCurso.fecha_hora_salida)}</div>
+              <div className="text-sm text-[#555555]">Salida: {fmtFecha(viajeEnCurso.fecha_hora_salida)}</div>
             </div>
             <button className={btnPrimary} onClick={() => setMode("finalizar")}>Finalizar viaje</button>
           </div>
         </div>
       ) : (
         <div className={card + " text-center py-10"}>
-          <div className="text-slate-500 text-sm mb-4">No tenés ningún viaje en curso</div>
+          <div className="text-[#555555] text-sm mb-4">No tenés ningún viaje en curso</div>
           <button className={btnPrimary} onClick={() => setMode("iniciar")}>Iniciar viaje</button>
         </div>
       )}
 
       <div>
-        <div className="text-sm font-medium text-slate-600 mb-2">Mis viajes finalizados</div>
+        <div className="text-sm font-medium text-[#555555] mb-2">Mis viajes finalizados</div>
         <div className="space-y-2">
-          {misViajes.length === 0 && <div className="text-sm text-slate-400">Todavía no registraste viajes.</div>}
+          {misViajes.length === 0 && <div className="text-sm text-[#555555]/70">Todavía no registraste viajes.</div>}
           {misViajes.map((v) => (
             <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} />
           ))}
@@ -138,7 +138,7 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
 
   return (
     <div className={card + " max-w-xl"}>
-      <div className="text-base font-medium text-slate-800 mb-4">Iniciar viaje</div>
+      <div className="text-base font-medium text-[#1A1A1A] mb-4">Iniciar viaje</div>
 
       <Field label="Vehículo">
         <select className={inputCls} value={idVehiculo} onChange={(e) => setIdVehiculo(e.target.value)}>
@@ -165,7 +165,7 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
             <option key={l.id_lugar} value={l.id_lugar}>{l.nombre_lugar}</option>
           ))}
         </select>
-        <div className="text-xs text-slate-400 mt-1 mb-1">¿No está en la lista?</div>
+        <div className="text-xs text-[#555555]/70 mt-1 mb-1">¿No está en la lista?</div>
         <input className={inputCls} placeholder="Cargar un lugar nuevo" value={nuevoDestino}
           onChange={(e) => { setNuevoDestino(e.target.value); setIdDestino(""); }} />
       </Field>
@@ -174,7 +174,7 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
         <input type="number" className={inputCls} value={odometroInicial} onChange={(e) => setOdometroInicial(e.target.value)} placeholder="Ej: 2425" />
       </Field>
 
-      <div className="mb-2 text-sm font-medium text-slate-600">Carga transportada</div>
+      <div className="mb-2 text-sm font-medium text-[#555555]">Carga transportada</div>
       {cargasSel.map((c, i) => (
         <div key={i} className="flex gap-2 mb-2 items-start">
           <select className={inputCls} value={c.id_carga} onChange={(e) => updCarga(i, "id_carga", e.target.value)}>
@@ -184,10 +184,10 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
             ))}
           </select>
           <input type="number" className={inputCls} placeholder="Cantidad (kg)" value={c.cantidad_inicial} onChange={(e) => updCarga(i, "cantidad_inicial", e.target.value)} />
-          {cargasSel.length > 1 && <button className="text-slate-400 hover:text-red-500 px-2" onClick={() => rmCarga(i)}>✕</button>}
+          {cargasSel.length > 1 && <button className="text-[#555555]/70 hover:text-red-500 px-2" onClick={() => rmCarga(i)}>✕</button>}
         </div>
       ))}
-      <button className="text-amber-600 text-sm font-medium mb-4" onClick={addCarga}>+ Agregar otra carga</button>
+      <button className="text-[#2E7D32] text-sm font-semibold mb-4" onClick={addCarga}>+ Agregar otra carga</button>
 
       <Field label="Observaciones (opcional)">
         <textarea className={inputCls} rows={3} placeholder="Cualquier detalle que no esté en los campos de arriba…"
@@ -245,8 +245,8 @@ function FinalizarViaje({ catalogos, cargamentos, viaje, onDone, onCancel }) {
 
   return (
     <div className={card + " max-w-xl"}>
-      <div className="text-base font-medium text-slate-800 mb-1">Finalizar viaje {viaje.numero_viaje != null ? `#${viaje.numero_viaje}` : "(nuevo)"}</div>
-      <div className="text-sm text-slate-500 mb-4">odómetro inicial {viaje.odometro_inicial.toLocaleString()} km</div>
+      <div className="text-base font-medium text-[#1A1A1A] mb-1">Finalizar viaje {viaje.numero_viaje != null ? `#${viaje.numero_viaje}` : "(nuevo)"}</div>
+      <div className="text-sm text-[#555555] mb-4">odómetro inicial {viaje.odometro_inicial.toLocaleString()} km</div>
 
       <Field label="Destino">
         <select className={inputCls} value={idDestino} onChange={(e) => setIdDestino(e.target.value)}>
@@ -261,17 +261,17 @@ function FinalizarViaje({ catalogos, cargamentos, viaje, onDone, onCancel }) {
       </Field>
 
       {odometroFinal && Number(odometroFinal) >= viaje.odometro_inicial && (
-        <div className="text-sm text-slate-500 mb-4">
-          Kilómetros recorridos: <span className="font-mono font-medium text-slate-700">{Number(odometroFinal) - viaje.odometro_inicial} km</span>
+        <div className="text-sm text-[#555555] mb-4">
+          Kilómetros recorridos: <span className="font-mono font-medium text-[#1A1A1A]">{Number(odometroFinal) - viaje.odometro_inicial} km</span>
         </div>
       )}
 
-      <div className="mb-2 text-sm font-medium text-slate-600">Cantidad recibida en destino</div>
+      <div className="mb-2 text-sm font-medium text-[#555555]">Cantidad recibida en destino</div>
       {misCargamentos.map((c) => {
         const carga = catalogos.cargas.find((x) => x.id_carga === c.id_carga);
         return (
           <div key={c.id_cargamento} className="flex gap-2 mb-2 items-center">
-            <div className="w-40 text-sm text-slate-600">{carga?.nombre_carga}</div>
+            <div className="w-40 text-sm text-[#555555]">{carga?.nombre_carga}</div>
             <input type="number" className={inputCls} placeholder={`Cargado: ${c.cantidad_inicial} kg`}
               value={cantidades[c.id_cargamento]} onChange={(e) => setCantidades({ ...cantidades, [c.id_cargamento]: e.target.value })} />
           </div>

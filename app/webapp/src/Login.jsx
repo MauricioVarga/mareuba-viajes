@@ -1,14 +1,24 @@
 import React, { useState } from "react";
+import { Mail, Lock } from "lucide-react";
 import { supabase } from "./supabaseClient";
-import { inputCls, btnPrimary, btnGhost, ErrorBanner } from "./ui";
+import { btnPrimary, ErrorBanner, CampoTexto, CampoPassword } from "./ui";
 
-const inputOscuro = "w-full rounded-md bg-slate-700 border border-slate-600 text-white px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
-
-function Marca() {
+function Tarjeta({ children }) {
   return (
-    <div className="mb-8 text-center">
-      <div className="text-amber-500 text-2xl font-semibold tracking-tight">Mareuba</div>
-      <div className="text-slate-400 text-sm mt-1">Registro de viajes de camiones</div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8F9FA] px-4 py-8">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-[#CCCCCC]/40 overflow-hidden">
+        <div className="bg-[#2E7D32] px-6 py-8 text-center text-white">
+          <div className="mx-auto mb-3 w-16 h-16 bg-white rounded-full shadow-md overflow-hidden">
+            <img src="/icon-192.png" alt="Mareuba" className="w-full h-full object-cover" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">MAREUBA</h1>
+          <p className="text-xs text-white/80 font-medium tracking-wide mt-1 uppercase">Registro de Viajes &amp; Logística Agro</p>
+        </div>
+        {children}
+        <div className="bg-[#F8F9FA] px-6 py-4 border-t border-[#CCCCCC]/30 text-center">
+          <p className="text-xs text-[#555555] font-medium">Sistema de Operaciones de Campo — Mareuba</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -29,23 +39,34 @@ function FormularioLogin({ irARecuperar }) {
   };
 
   return (
-    <form onSubmit={submit} className="w-full max-w-sm">
-      <Marca />
-      <div className="bg-slate-800 rounded-lg p-5 space-y-3">
-        <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputOscuro} />
-        <input type="password" required placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className={inputOscuro} />
+    <Tarjeta>
+      <form onSubmit={submit} className="p-6 md:p-8 space-y-5">
         <ErrorBanner message={error} />
-        <button type="submit" disabled={loading} className={btnPrimary + " w-full"}>
-          {loading ? "Ingresando…" : "Ingresar"}
+
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">Correo electrónico</label>
+          <CampoTexto icono={Mail} type="email" required placeholder="tu@mareuba.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label htmlFor="password" className="block text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">Contraseña</label>
+            <button type="button" onClick={irARecuperar} className="text-xs font-semibold text-[#2E7D32] hover:underline">
+              ¿Olvidaste tu clave?
+            </button>
+          </div>
+          <CampoPassword icono={Lock} required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+
+        <button type="submit" disabled={loading} className={btnPrimary + " w-full mt-2"}>
+          {loading ? (
+            <span className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+          ) : (
+            "INGRESAR AL SISTEMA"
+          )}
         </button>
-        <button type="button" onClick={irARecuperar} className="w-full text-center text-slate-400 hover:text-amber-400 text-sm">
-          ¿Olvidaste tu contraseña?
-        </button>
-      </div>
-      <p className="text-slate-500 text-xs text-center mt-4">
-        ¿No tenés cuenta? Pedile al administrador que te invite desde el panel de Supabase.
-      </p>
-    </form>
+      </form>
+    </Tarjeta>
   );
 }
 
@@ -59,9 +80,6 @@ function FormularioRecuperar({ volverALogin }) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // redirectTo: adonde vuelve el chofer al tocar el enlace del email.
-    // Tiene que estar dado de alta en Supabase → Authentication →
-    // URL Configuration → Redirect URLs, si no el enlace no funciona.
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
     setLoading(false);
     if (error) setError("No se pudo enviar el enlace. Revisá el email e intentá de nuevo.");
@@ -70,42 +88,39 @@ function FormularioRecuperar({ volverALogin }) {
 
   if (enviado) {
     return (
-      <div className="w-full max-w-sm text-center">
-        <Marca />
-        <div className="bg-slate-800 rounded-lg p-5">
-          <div className="text-white text-sm mb-1">Listo, te mandamos un enlace</div>
-          <div className="text-slate-400 text-sm mb-4">Revisá {email} (y la carpeta de spam) y tocá el enlace para elegir una contraseña nueva.</div>
-          <button onClick={volverALogin} className={btnGhost + " w-full"}>Volver</button>
+      <Tarjeta>
+        <div className="p-6 md:p-8 text-center">
+          <div className="text-[#1A1A1A] font-semibold mb-1">Listo, te mandamos un enlace</div>
+          <div className="text-[#555555] text-sm mb-5">Revisá {email} (y la carpeta de spam) y tocá el enlace para elegir una contraseña nueva.</div>
+          <button onClick={volverALogin} className="text-sm font-semibold text-[#2E7D32] hover:underline">Volver al login</button>
         </div>
-      </div>
+      </Tarjeta>
     );
   }
 
   return (
-    <form onSubmit={submit} className="w-full max-w-sm">
-      <Marca />
-      <div className="bg-slate-800 rounded-lg p-5 space-y-3">
-        <div className="text-slate-300 text-sm mb-1">Ingresá tu email y te mandamos un enlace para elegir una contraseña nueva.</div>
-        <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputOscuro} />
+    <Tarjeta>
+      <form onSubmit={submit} className="p-6 md:p-8 space-y-5">
+        <p className="text-sm text-[#555555]">Ingresá tu email y te mandamos un enlace para elegir una contraseña nueva.</p>
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">Correo electrónico</label>
+          <CampoTexto icono={Mail} type="email" required placeholder="tu@mareuba.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
         <ErrorBanner message={error} />
         <button type="submit" disabled={loading} className={btnPrimary + " w-full"}>
-          {loading ? "Enviando…" : "Enviar enlace"}
+          {loading ? "Enviando…" : "ENVIAR ENLACE"}
         </button>
-        <button type="button" onClick={volverALogin} className="w-full text-center text-slate-400 hover:text-amber-400 text-sm">
+        <button type="button" onClick={volverALogin} className="w-full text-center text-sm font-semibold text-[#555555] hover:text-[#1A1A1A]">
           Volver
         </button>
-      </div>
-    </form>
+      </form>
+    </Tarjeta>
   );
 }
 
 export default function Login() {
   const [modo, setModo] = useState("login"); // "login" | "recuperar"
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-8">
-      {modo === "login"
-        ? <FormularioLogin irARecuperar={() => setModo("recuperar")} />
-        : <FormularioRecuperar volverALogin={() => setModo("login")} />}
-    </div>
-  );
+  return modo === "login"
+    ? <FormularioLogin irARecuperar={() => setModo("recuperar")} />
+    : <FormularioRecuperar volverALogin={() => setModo("login")} />;
 }

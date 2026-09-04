@@ -7,19 +7,19 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon-192.png", "icon-512.png"],
+      includeAssets: ["icon-192.png", "icon-512.png", "icon-512-maskable.png"],
       manifest: {
         name: "Mareuba · Registro de viajes",
         short_name: "Mareuba",
         description: "Registro de viajes de camiones",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+        theme_color: "#2E7D32",
+        background_color: "#F8F9FA",
         display: "standalone",
         start_url: "/",
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {

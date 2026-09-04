@@ -10,10 +10,10 @@ export default function AdminView({ catalogos, viajes, cargamentos, usuarios, re
   ];
   return (
     <div>
-      <div className="flex gap-1 mb-5 border-b border-slate-200 overflow-x-auto">
+      <div className="flex gap-1 mb-5 border-b border-[#CCCCCC]/50 overflow-x-auto">
         {tabs.map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === k ? "border-amber-500 text-slate-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === k ? "border-[#2E7D32] text-[#1A1A1A]" : "border-transparent text-[#555555] hover:text-[#1A1A1A]"}`}>
             {l}
           </button>
         ))}
@@ -84,7 +84,7 @@ function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm text-slate-500">Tocá un viaje finalizado para corregirlo.</div>
+        <div className="text-sm text-[#555555]">Tocá un viaje finalizado para corregirlo.</div>
         <select className={inputCls + " w-auto"} value={filtroChofer} onChange={(e) => setFiltroChofer(e.target.value)}>
           <option value="TODOS">Todos los choferes</option>
           {choferesConViajes.map((u) => (
@@ -93,7 +93,7 @@ function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
         </select>
       </div>
       <div className="space-y-2">
-        {viajesFiltrados.length === 0 && <div className="text-sm text-slate-400">No hay viajes para mostrar.</div>}
+        {viajesFiltrados.length === 0 && <div className="text-sm text-[#555555]/70">No hay viajes para mostrar.</div>}
         {viajesFiltrados.map((v) => (
           <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} usuarios={usuarios} mostrarChofer
             onClick={v.id_estado === "EST_FIN" ? () => setEditando(v.id_viaje) : undefined} />
@@ -126,7 +126,7 @@ function EditarViajeAdmin({ catalogos, viaje, onDone, onCancel }) {
 
   return (
     <div className={card + " max-w-lg"}>
-      <div className="text-base font-medium text-slate-800 mb-4">Corregir viaje #{viaje.numero_viaje}</div>
+      <div className="text-base font-medium text-[#1A1A1A] mb-4">Corregir viaje #{viaje.numero_viaje}</div>
       <Field label="Destino">
         <select className={inputCls} value={idDestino} onChange={(e) => setIdDestino(e.target.value)}>
           {catalogos.lugares.map((l) => <option key={l.id_lugar} value={l.id_lugar}>{l.nombre_lugar}</option>)}
@@ -193,13 +193,13 @@ function AdminCatalogo({ tabla, pk, items, campos, nuevo, reload }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-sm text-slate-500">{items.length} registrados</div>
+        <div className="text-sm text-[#555555]">{items.length} registrados</div>
         {!formulario && <button className={btnPrimary} onClick={abrirCrear}>+ Nuevo</button>}
       </div>
 
       {formulario && (
         <div className={card + " mb-3"}>
-          <div className="text-sm font-medium text-slate-700 mb-3">{formulario.modo === "crear" ? "Nuevo registro" : "Editar registro"}</div>
+          <div className="text-sm font-medium text-[#1A1A1A] mb-3">{formulario.modo === "crear" ? "Nuevo registro" : "Editar registro"}</div>
           <div className="grid grid-cols-2 gap-3 mb-3">
             {campos.map((f) => (
               <Field key={f.key} label={f.label}>
@@ -227,9 +227,9 @@ function AdminCatalogo({ tabla, pk, items, campos, nuevo, reload }) {
       <div className="space-y-2">
         {items.map((item) => (
           <div key={item[pk]} className={card + " flex justify-between items-center py-3"}>
-            <div className="text-sm text-slate-800">{campos.map((f) => valorMostrable(item, f)).filter(Boolean).join(" · ")}</div>
+            <div className="text-sm text-[#1A1A1A]">{campos.map((f) => valorMostrable(item, f)).filter(Boolean).join(" · ")}</div>
             <div className="flex items-center gap-3">
-              <button onClick={() => abrirEditar(item)} className="text-xs text-slate-500 hover:text-amber-600 font-medium">Editar</button>
+              <button onClick={() => abrirEditar(item)} className="text-xs text-[#555555] hover:text-[#2E7D32] font-medium">Editar</button>
               <button onClick={() => toggleActivo(item)} className="text-xs">
                 <Badge tone={item.activo ? "green" : "slate"}>{item.activo ? "Activo" : "Inactivo"}</Badge>
               </button>
@@ -254,13 +254,13 @@ function AdminMaestros({ catalogos, reload }) {
 
   return (
     <div>
-      <div className="text-sm text-slate-500 mb-3">
+      <div className="text-sm text-[#555555] mb-3">
         Estos son los catálogos base que alimentan los desplegables del resto de la app.
       </div>
       <div className="flex gap-2 mb-4 flex-wrap">
         {grupos.map((g) => (
           <button key={g.key} onClick={() => setSub(g.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${sub === g.key ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${sub === g.key ? "bg-[#2E7D32] text-white" : "bg-[#F8F9FA] text-[#555555] hover:bg-[#CCCCCC]/40"}`}>
             {g.label} ({g.items.length})
           </button>
         ))}
@@ -313,7 +313,7 @@ function AdminCatalogoSimple({ tabla, pk, labelField, items, reload }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-sm text-slate-500">{items.length} registrados</div>
+        <div className="text-sm text-[#555555]">{items.length} registrados</div>
         {!formulario && <button className={btnPrimary} onClick={abrirCrear}>+ Nuevo</button>}
       </div>
 
@@ -342,12 +342,12 @@ function AdminCatalogoSimple({ tabla, pk, labelField, items, reload }) {
         {items.map((item) => (
           <div key={item[pk]} className={card + " flex justify-between items-center py-3"}>
             <div>
-              <div className="text-sm text-slate-800">{item[labelField]}</div>
-              <div className="text-xs text-slate-400 font-mono">{item[pk]}</div>
+              <div className="text-sm text-[#1A1A1A]">{item[labelField]}</div>
+              <div className="text-xs text-[#555555]/70 font-mono">{item[pk]}</div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => abrirEditar(item)} className="text-xs text-slate-500 hover:text-amber-600 font-medium">Editar</button>
-              <button onClick={() => eliminar(item)} className="text-xs text-slate-500 hover:text-red-600 font-medium">Eliminar</button>
+              <button onClick={() => abrirEditar(item)} className="text-xs text-[#555555] hover:text-[#2E7D32] font-medium">Editar</button>
+              <button onClick={() => eliminar(item)} className="text-xs text-[#555555] hover:text-red-600 font-medium">Eliminar</button>
             </div>
           </div>
         ))}
@@ -363,15 +363,15 @@ function AdminUsuarios({ usuarios, reload }) {
   };
   return (
     <div>
-      <div className="text-sm text-slate-500 mb-3">
+      <div className="text-sm text-[#555555] mb-3">
         {usuarios.length} usuarios. Para dar de alta uno nuevo: Supabase → Authentication → Users → Invite user.
       </div>
       <div className="space-y-2">
         {usuarios.map((u) => (
           <div key={u.id_usuario} className={card + " flex justify-between items-center py-3"}>
             <div>
-              <div className="text-sm text-slate-800">{u.nombre} {u.apellido}</div>
-              <div className="text-xs text-slate-500">{u.email}</div>
+              <div className="text-sm text-[#1A1A1A]">{u.nombre} {u.apellido}</div>
+              <div className="text-xs text-[#555555]">{u.email}</div>
             </div>
             <select className={inputCls + " w-auto"} value={u.id_rol} onChange={(e) => cambiarRol(u.id_usuario, e.target.value)}>
               {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

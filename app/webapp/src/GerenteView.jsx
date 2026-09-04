@@ -6,8 +6,8 @@ import { ViajeRow } from "./ChoferView";
 function KpiCard({ label, value }) {
   return (
     <div className={card}>
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-2xl font-semibold text-slate-800 mt-1 font-mono">{value}</div>
+      <div className="text-xs text-[#555555]">{label}</div>
+      <div className="text-2xl font-semibold text-[#1A1A1A] mt-1 font-mono">{value}</div>
     </div>
   );
 }
@@ -37,20 +37,20 @@ export default function GerenteView({ catalogos, viajes, cargamentos, kpiChofer,
       </div>
 
       <div className={card}>
-        <div className="text-sm font-medium text-slate-700 mb-4">Kilómetros recorridos por chofer</div>
+        <div className="text-sm font-medium text-[#1A1A1A] mb-4">Kilómetros recorridos por chofer</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={datos}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="chofer" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip />
-            <Bar dataKey="km" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="km" fill="#2E7D32" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div>
-        <div className="text-sm font-medium text-slate-600 mb-2">Todos los viajes</div>
+        <div className="text-sm font-medium text-[#555555] mb-2">Todos los viajes</div>
         <div className="space-y-2">
           {viajes.map((v) => (
             <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} usuarios={usuarios} mostrarChofer />
