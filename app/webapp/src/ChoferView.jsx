@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Field, Badge, card, inputCls, btnPrimary, btnGhost, fmtFecha, ErrorBanner } from "./ui";
+import React, { useState, useMemo } from "react";
+import { Field, Badge, card, inputCls, btnPrimary, btnGhost, fmtFecha, ErrorBanner, KpiCard } from "./ui";
 import { iniciarViaje, finalizarViaje, crearLugar } from "./data";
 
 function lugarNombre(catalogos, id) { return catalogos.lugares.find((l) => l.id_lugar === id)?.nombre_lugar || "—"; }
@@ -40,6 +40,7 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
 
 export default function ChoferView({ catalogos, viajes, cargamentos, usuario, reload }) {
   const [mode, setMode] = useState("home");
+  const [tab, setTab] = useState("viajes"); // "viajes" | "resumen"
   const viajeEnCurso = viajes.find((v) => v.id_chofer === usuario.id_usuario && v.id_estado === "EST_CURSO");
   const misViajes = viajes.filter((v) => v.id_chofer === usuario.id_usuario && v.id_estado === "EST_FIN");
 
@@ -53,35 +54,109 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
 
   return (
     <div className="space-y-5">
-      {viajeEnCurso ? (
-        <div className={card + " border-amber-300 bg-amber-50"}>
-          <div className="flex items-center justify-between">
-            <div>
-              <Badge tone="amber">Viaje en curso</Badge>
-              <div className="text-lg font-medium text-[#1A1A1A] mt-2">
-                {lugarNombre(catalogos, viajeEnCurso.id_origen)} → {lugarNombre(catalogos, viajeEnCurso.id_destino)}
-              </div>
-              <div className="text-sm text-[#555555] mt-1">
-                {vehiculoNombre(catalogos, viajeEnCurso.id_vehiculo)} · odómetro inicial {viajeEnCurso.odometro_inicial.toLocaleString()} km
-              </div>
-              <div className="text-sm text-[#555555]">Salida: {fmtFecha(viajeEnCurso.fecha_hora_salida)}</div>
-            </div>
-            <button className={btnPrimary} onClick={() => setMode("finalizar")}>Finalizar viaje</button>
-          </div>
-        </div>
+      <div className="flex gap-1 border-b border-[#CCCCCC]/50">
+        {[["viajes", "Mis viajes"], ["resumen", "Resumen"]].map(([k, l]) => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === k ? "border-[#2E7D32] text-[#1A1A1A]" : "border-transparent text-[#555555] hover:text-[#1A1A1A]"}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {tab === "resumen" ? (
+        <ResumenChofer catalogos={catalogos} misViajes={misViajes} cargamentos={cargamentos} />
       ) : (
-        <div className={card + " text-center py-10"}>
-          <div className="text-[#555555] text-sm mb-4">No tenés ningún viaje en curso</div>
-          <button className={btnPrimary} onClick={() => setMode("iniciar")}>Iniciar viaje</button>
-        </div>
+        <>
+          {viajeEnCurso ? (
+            <div className={card + " border-amber-300 bg-amber-50"}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Badge tone="amber">Viaje en curso</Badge>
+                  <div className="text-lg font-medium text-[#1A1A1A] mt-2">
+                    {lugarNombre(catalogos, viajeEnCurso.id_origen)} → {lugarNombre(catalogos, viajeEnCurso.id_destino)}
+                  </div>
+                  <div className="text-sm text-[#555555] mt-1">
+                    {vehiculoNombre(catalogos, viajeEnCurso.id_vehiculo)} · odómetro inicial {viajeEnCurso.odometro_inicial.toLocaleString()} km
+                  </div>
+                  <div className="text-sm text-[#555555]">Salida: {fmtFecha(viajeEnCurso.fecha_hora_salida)}</div>
+                </div>
+                <button className={btnPrimary} onClick={() => setMode("finalizar")}>Finalizar viaje</button>
+              </div>
+            </div>
+          ) : (
+            <div className={card + " text-center py-10"}>
+              <div className="text-[#555555] text-sm mb-4">No tenés ningún viaje en curso</div>
+              <button className={btnPrimary} onClick={() => setMode("iniciar")}>Iniciar viaje</button>
+            </div>
+          )}
+
+          <div>
+            <div className="text-sm font-medium text-[#555555] mb-2">Mis viajes finalizados</div>
+            <div className="space-y-2">
+              {misViajes.length === 0 && <div className="text-sm text-[#555555]/70">Todavía no registraste viajes.</div>}
+              {misViajes.map((v) => (
+                <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} />
+              ))}
+            </div>
+          </div>
+        </>
       )}
+    </div>
+  );
+}
+
+function ResumenChofer({ catalogos, misViajes, cargamentos }) {
+  const stats = useMemo(() => {
+    const idsViajes = new Set(misViajes.map((v) => v.id_viaje));
+    const kmTotales = misViajes.reduce((s, v) => s + (v.odometro_final - v.odometro_inicial), 0);
+
+    // Agrupar por carga (lo que en el resto de la app ya llamamos "tipo
+    // de carga" — es el mismo desplegable que usa el chofer al iniciar
+    // el viaje). No se suman cantidades entre cargas de distinta unidad
+    // (kg vs lts): cada grupo muestra su propia unidad, para no mezclar.
+    const porCarga = {};
+    cargamentos.forEach((c) => {
+      if (!idsViajes.has(c.id_viaje)) return;
+      const carga = catalogos.cargas.find((x) => x.id_carga === c.id_carga);
+      const nombre = carga?.nombre_carga || "Sin especificar";
+      const unidad = catalogos.unidades.find((u) => u.id_unidad === carga?.id_unidad)?.nombre_unidad || "";
+      if (!porCarga[c.id_carga]) porCarga[c.id_carga] = { nombre, unidad, viajes: new Set(), cantidad: 0 };
+      porCarga[c.id_carga].viajes.add(c.id_viaje);
+      porCarga[c.id_carga].cantidad += Number(c.cantidad_destino ?? c.cantidad_inicial ?? 0);
+    });
+
+    const grupos = Object.values(porCarga)
+      .map((g) => ({ ...g, viajes: g.viajes.size }))
+      .sort((a, b) => b.viajes - a.viajes);
+
+    return { kmTotales, grupos, cantViajes: misViajes.length };
+  }, [misViajes, cargamentos, catalogos]);
+
+  if (stats.cantViajes === 0) {
+    return <div className={card + " text-center py-10 text-sm text-[#555555]"}>Todavía no hay viajes finalizados para mostrar un resumen.</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-3">
+        <KpiCard label="Viajes finalizados" value={stats.cantViajes} />
+        <KpiCard label="Km recorridos" value={stats.kmTotales.toLocaleString()} />
+        <KpiCard label="Tipos de carga" value={stats.grupos.length} />
+      </div>
 
       <div>
-        <div className="text-sm font-medium text-[#555555] mb-2">Mis viajes finalizados</div>
+        <div className="text-sm font-medium text-[#555555] mb-2">Por tipo de carga</div>
         <div className="space-y-2">
-          {misViajes.length === 0 && <div className="text-sm text-[#555555]/70">Todavía no registraste viajes.</div>}
-          {misViajes.map((v) => (
-            <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} />
+          {stats.grupos.map((g) => (
+            <div key={g.nombre} className={card + " flex items-center justify-between"}>
+              <div>
+                <div className="text-sm font-medium text-[#1A1A1A]">{g.nombre}</div>
+                <div className="text-xs text-[#555555]">{g.viajes} viaje{g.viajes !== 1 ? "s" : ""}</div>
+              </div>
+              <div className="font-mono text-sm text-[#1A1A1A]">
+                {g.cantidad.toLocaleString()} {g.unidad}
+              </div>
+            </div>
           ))}
         </div>
       </div>

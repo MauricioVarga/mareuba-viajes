@@ -79,6 +79,15 @@ export function Spinner({ label = "Cargando…" }) {
   return <div className="p-10 text-center text-[#555555] text-sm">{label}</div>;
 }
 
+export function KpiCard({ label, value }) {
+  return (
+    <div className={card}>
+      <div className="text-xs text-[#555555]">{label}</div>
+      <div className="text-2xl font-semibold text-[#1A1A1A] mt-1 font-mono">{value}</div>
+    </div>
+  );
+}
+
 /* -----------------------------------------------------------------------
    Campos de auth (Login / ResetPassword): con ícono a la izquierda, en
    línea con el mockup del diseñador. `oscuro` es por si en algún
