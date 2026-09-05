@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Field, Badge, card, inputCls, btnPrimary, btnGhost, ErrorBanner, ROLES } from "./ui";
 import { corregirViaje, crearCatalogo, actualizarCatalogo, eliminarCatalogo, actualizarRolUsuario } from "./data";
-import { ViajeRow } from "./ChoferView";
+import { ViajeRow, AnularViaje } from "./ChoferView";
 
 export default function AdminView({ catalogos, viajes, cargamentos, usuarios, reload }) {
   const [tab, setTab] = useState("viajes");
@@ -64,6 +64,7 @@ export default function AdminView({ catalogos, viajes, cargamentos, usuarios, re
 
 function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
   const [editando, setEditando] = useState(null);
+  const [anulando, setAnulando] = useState(null);
   const [filtroChofer, setFiltroChofer] = useState("TODOS");
 
   const choferesConViajes = useMemo(() => {
@@ -79,6 +80,9 @@ function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
   if (editando) {
     const v = viajes.find((x) => x.id_viaje === editando);
     return <EditarViajeAdmin catalogos={catalogos} viaje={v} onDone={() => { setEditando(null); reload(); }} onCancel={() => setEditando(null)} />;
+  }
+  if (anulando) {
+    return <AnularViaje viaje={anulando} onDone={() => { setAnulando(null); reload(); }} onCancel={() => setAnulando(null)} />;
   }
 
   return (
@@ -96,7 +100,8 @@ function AdminViajes({ catalogos, viajes, cargamentos, usuarios, reload }) {
         {viajesFiltrados.length === 0 && <div className="text-sm text-[#555555]/70">No hay viajes para mostrar.</div>}
         {viajesFiltrados.map((v) => (
           <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} usuarios={usuarios} mostrarChofer
-            onClick={v.id_estado === "EST_FIN" ? () => setEditando(v.id_viaje) : undefined} />
+            onClick={v.id_estado === "EST_FIN" ? () => setEditando(v.id_viaje) : undefined}
+            onAnular={(viaje) => setAnulando(viaje)} />
         ))}
       </div>
     </div>

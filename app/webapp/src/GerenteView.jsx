@@ -14,6 +14,8 @@ function KpiCard({ label, value }) {
 
 export default function GerenteView({ catalogos, viajes, cargamentos, kpiChofer, usuarios }) {
   const finalizados = viajes.filter((v) => v.id_estado === "EST_FIN");
+  const enCurso = viajes.filter((v) => v.id_estado === "EST_CURSO");
+  const anulados = viajes.filter((v) => v.id_estado === "EST_ANULADO");
   const kmTotales = finalizados.reduce((s, v) => s + (v.odometro_final - v.odometro_inicial), 0);
 
   const nombreChofer = (id) => {
@@ -30,10 +32,11 @@ export default function GerenteView({ catalogos, viajes, cargamentos, kpiChofer,
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <KpiCard label="Viajes finalizados" value={finalizados.length} />
-        <KpiCard label="Viajes en curso" value={viajes.length - finalizados.length} />
+        <KpiCard label="Viajes en curso" value={enCurso.length} />
         <KpiCard label="Km totales" value={kmTotales.toLocaleString()} />
+        <KpiCard label="Viajes anulados" value={anulados.length} />
       </div>
 
       <div className={card}>

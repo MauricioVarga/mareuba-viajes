@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from "react";
 import { Field, Badge, card, inputCls, btnPrimary, btnGhost, fmtFecha, ErrorBanner, KpiCard } from "./ui";
-import { iniciarViaje, finalizarViaje, crearLugar } from "./data";
+import { iniciarViaje, finalizarViaje, crearLugar, anularViaje } from "./data";
 
 function lugarNombre(catalogos, id) { return catalogos.lugares.find((l) => l.id_lugar === id)?.nombre_lugar || "—"; }
 function vehiculoNombre(catalogos, id) { return catalogos.vehiculos.find((v) => v.id_vehiculo === id)?.nombre_vehiculo || "—"; }
 
-export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrarChofer }) {
+export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrarChofer, onAnular }) {
   const misCargamentos = cargamentos.filter((c) => c.id_viaje === v.id_viaje);
   const chofer = mostrarChofer && usuarios ? usuarios.find((u) => u.id_usuario === v.id_chofer) : null;
   const pendienteDeSync = v.numero_viaje == null;
+  const anulado = v.id_estado === "EST_ANULADO";
   return (
     <div className={card + " flex items-center justify-between " + (onClick ? "cursor-pointer hover:border-[#2E7D32]/50" : "")} onClick={onClick}>
       <div>
@@ -23,6 +24,12 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
           {misCargamentos.map((c) => catalogos.cargas.find((x) => x.id_carga === c.id_carga)?.nombre_carga).join(", ")}
         </div>
         {v.observaciones && <div className="text-xs text-[#555555] italic mt-0.5">"{v.observaciones}"</div>}
+        {anulado && v.motivo_anulacion && <div className="text-xs text-[#D32F2F] mt-0.5">Anulado: {v.motivo_anulacion}</div>}
+        {onAnular && !anulado && (
+          <button onClick={(e) => { e.stopPropagation(); onAnular(v); }} className="text-xs text-[#D32F2F] hover:underline mt-1 font-medium">
+            Anular viaje
+          </button>
+        )}
       </div>
       <div className="text-right">
         <div className="font-mono text-sm text-[#1A1A1A]">
@@ -30,6 +37,8 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
         </div>
         {pendienteDeSync ? (
           <Badge tone="amber">Sin sincronizar</Badge>
+        ) : anulado ? (
+          <Badge tone="slate">Anulado</Badge>
         ) : (
           <Badge tone={v.id_estado === "EST_FIN" ? "green" : "amber"}>{v.id_estado === "EST_FIN" ? "Finalizado" : "En curso"}</Badge>
         )}
@@ -39,10 +48,16 @@ export function ViajeRow({ catalogos, cargamentos, v, onClick, usuarios, mostrar
 }
 
 export default function ChoferView({ catalogos, viajes, cargamentos, usuario, reload }) {
-  const [mode, setMode] = useState("home");
+  const [mode, setMode] = useState("home"); // "home" | "iniciar" | "finalizar" | { tipo: "anular", viaje }
   const [tab, setTab] = useState("viajes"); // "viajes" | "resumen"
   const viajeEnCurso = viajes.find((v) => v.id_chofer === usuario.id_usuario && v.id_estado === "EST_CURSO");
-  const misViajes = viajes.filter((v) => v.id_chofer === usuario.id_usuario && v.id_estado === "EST_FIN");
+  // El historial incluye los anulados (siguen visibles, para que el
+  // chofer no "pierda de vista" un viaje que canceló); el Resumen, más
+  // abajo, sí los excluye de las cuentas.
+  const misViajesHistorial = viajes
+    .filter((v) => v.id_chofer === usuario.id_usuario && (v.id_estado === "EST_FIN" || v.id_estado === "EST_ANULADO"))
+    .sort((a, b) => new Date(b.fecha_hora_salida) - new Date(a.fecha_hora_salida));
+  const misViajesFinalizados = misViajesHistorial.filter((v) => v.id_estado === "EST_FIN");
 
   if (mode === "iniciar")
     return <IniciarViaje catalogos={catalogos} onDone={() => { setMode("home"); reload(); }} onCancel={() => setMode("home")} />;
@@ -51,6 +66,8 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
       <FinalizarViaje catalogos={catalogos} cargamentos={cargamentos} viaje={viajeEnCurso}
         onDone={() => { setMode("home"); reload(); }} onCancel={() => setMode("home")} />
     );
+  if (mode?.tipo === "anular")
+    return <AnularViaje viaje={mode.viaje} onDone={() => { setMode("home"); reload(); }} onCancel={() => setMode("home")} />;
 
   return (
     <div className="space-y-5">
@@ -64,7 +81,7 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
       </div>
 
       {tab === "resumen" ? (
-        <ResumenChofer catalogos={catalogos} misViajes={misViajes} cargamentos={cargamentos} />
+        <ResumenChofer catalogos={catalogos} misViajes={misViajesFinalizados} cargamentos={cargamentos} />
       ) : (
         <>
           {viajeEnCurso ? (
@@ -80,7 +97,12 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
                   </div>
                   <div className="text-sm text-[#555555]">Salida: {fmtFecha(viajeEnCurso.fecha_hora_salida)}</div>
                 </div>
-                <button className={btnPrimary} onClick={() => setMode("finalizar")}>Finalizar viaje</button>
+                <div className="flex flex-col items-end gap-2">
+                  <button className={btnPrimary} onClick={() => setMode("finalizar")}>Finalizar viaje</button>
+                  <button className="text-xs text-[#D32F2F] hover:underline font-medium" onClick={() => setMode({ tipo: "anular", viaje: viajeEnCurso })}>
+                    Anular viaje
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -91,11 +113,12 @@ export default function ChoferView({ catalogos, viajes, cargamentos, usuario, re
           )}
 
           <div>
-            <div className="text-sm font-medium text-[#555555] mb-2">Mis viajes finalizados</div>
+            <div className="text-sm font-medium text-[#555555] mb-2">Mis viajes</div>
             <div className="space-y-2">
-              {misViajes.length === 0 && <div className="text-sm text-[#555555]/70">Todavía no registraste viajes.</div>}
-              {misViajes.map((v) => (
-                <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v} />
+              {misViajesHistorial.length === 0 && <div className="text-sm text-[#555555]/70">Todavía no registraste viajes.</div>}
+              {misViajesHistorial.map((v) => (
+                <ViajeRow key={v.id_viaje} catalogos={catalogos} cargamentos={cargamentos} v={v}
+                  onAnular={(viaje) => setMode({ tipo: "anular", viaje })} />
               ))}
             </div>
           </div>
@@ -274,6 +297,66 @@ function IniciarViaje({ catalogos, onDone, onCancel }) {
       <div className="flex gap-2 mt-2">
         <button className={btnPrimary} disabled={enviando} onClick={submit}>{enviando ? "Guardando…" : "Iniciar viaje"}</button>
         <button className={btnGhost} onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+export function AnularViaje({ viaje, onDone, onCancel }) {
+  const [motivo, setMotivo] = useState("");
+  const [confirmado, setConfirmado] = useState(false);
+  const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  const submit = async () => {
+    setError("");
+    if (motivo.trim().length < 5) return setError("Contá brevemente qué pasó (al menos unas palabras).");
+    if (!confirmado) return setError("Marcá el casillero para confirmar que entendiste.");
+    setEnviando(true);
+    try {
+      await anularViaje({ id_viaje: viaje.id_viaje, motivo_anulacion: motivo.trim() });
+      onDone();
+    } catch (e) {
+      setError(e.message || "No se pudo anular el viaje.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className={card + " max-w-lg"}>
+      <div className="text-base font-medium text-[#1A1A1A] mb-1">
+        Anular viaje {viaje.numero_viaje != null ? `#${viaje.numero_viaje}` : ""}
+      </div>
+      <div className="text-sm text-[#555555] mb-4">{fmtFecha(viaje.fecha_hora_salida)}</div>
+
+      <div className="bg-[#FBEAEA] border border-[#D32F2F]/30 text-[#D32F2F] text-sm rounded-lg p-3 mb-4">
+        Esta acción no se puede deshacer desde la app. El viaje no se borra —
+        queda guardado como anulado, visible para vos y para administración,
+        junto con el motivo que escribas abajo.
+      </div>
+
+      <Field label="¿Qué pasó?">
+        <textarea className={inputCls} rows={3} placeholder="Ej: elegí el vehículo equivocado, viaje duplicado…"
+          value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      </Field>
+
+      <label className="flex items-start gap-2 mb-4 cursor-pointer">
+        <input type="checkbox" checked={confirmado} onChange={(e) => setConfirmado(e.target.checked)} className="mt-1" />
+        <span className="text-sm text-[#555555]">Entiendo que esto anula el viaje y no se puede deshacer.</span>
+      </label>
+
+      <ErrorBanner message={error} />
+
+      <div className="flex gap-2">
+        <button
+          disabled={enviando}
+          onClick={submit}
+          className="inline-flex items-center justify-center min-h-[56px] bg-[#D32F2F] hover:bg-[#b52828] text-white font-bold text-sm px-5 rounded-xl shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {enviando ? "Anulando…" : "Confirmar anulación"}
+        </button>
+        <button className={btnGhost} onClick={onCancel}>Volver</button>
       </div>
     </div>
   );

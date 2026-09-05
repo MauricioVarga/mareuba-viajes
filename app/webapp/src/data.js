@@ -310,6 +310,46 @@ async function aplicarFinalizacionEnCache({ id_viaje, id_destino, odometro_final
   await guardarCache("cargamentos", nuevosCargamentos);
 }
 
+// --- anular viaje ---------------------------------------------------------
+// El chofer anula sus propios viajes (En Curso o Finalizados); el admin
+// puede anular cualquiera. Nunca se borra la fila: solo cambia de
+// estado, con motivo obligatorio, y queda afuera de los totales de
+// km/carga (ver vw_kpi_chofer_mensual en la base).
+
+async function ejecutarAnularViaje({ id_viaje, motivo_anulacion, anulado_por }) {
+  const { error } = await supabase
+    .from("viajes")
+    .update({ id_estado: "EST_ANULADO", motivo_anulacion, anulado_por, anulado_en: new Date().toISOString() })
+    .eq("id_viaje", id_viaje);
+  if (error) throw error;
+}
+
+export async function anularViaje({ id_viaje, motivo_anulacion }) {
+  const anulado_por = await usuarioIdActual();
+  const payload = { id_viaje, motivo_anulacion, anulado_por };
+
+  if (estaOnline()) {
+    try {
+      await ejecutarAnularViaje(payload);
+      return;
+    } catch (e) {
+      if (!esErrorDeRed(e)) throw e;
+    }
+  }
+  await agregarACola({ tipo: "ANULAR_VIAJE", payload });
+  await aplicarAnulacionEnCache(payload);
+}
+
+async function aplicarAnulacionEnCache({ id_viaje, motivo_anulacion, anulado_por }) {
+  const viajes = (await leerCache("viajes")) || [];
+  const nuevos = viajes.map((v) =>
+    v.id_viaje === id_viaje
+      ? { ...v, id_estado: "EST_ANULADO", motivo_anulacion, anulado_por, anulado_en: new Date().toISOString() }
+      : v
+  );
+  await guardarCache("viajes", nuevos);
+}
+
 /* ------------------------- ESCRITURAS de administración -----------------
    Estas asumen que el administrativo trabaja con conexión (oficina), así
    que no pasan por la cola offline — si falla la red, se les avisa y
@@ -354,6 +394,7 @@ async function ejecutarAccion(accion) {
     case "CREAR_LUGAR": return ejecutarCrearLugar(accion.payload);
     case "INICIAR_VIAJE": return ejecutarIniciarViaje(accion.payload);
     case "FINALIZAR_VIAJE": return ejecutarFinalizarViaje(accion.payload);
+    case "ANULAR_VIAJE": return ejecutarAnularViaje(accion.payload);
     default: throw new Error("Acción de sincronización desconocida: " + accion.tipo);
   }
 }
